@@ -13,10 +13,14 @@ builder.Services.AddDbContext<ViroCureFal2024dbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DbConnection")).EnableSensitiveDataLogging();
 });
 
-builder.Services.AddControllers();
-
+// Add DbFactory and UnitOfWork
+builder.Services.AddScoped<Func<ViroCureFal2024dbContext>>((provider) => () => provider.GetService<ViroCureFal2024dbContext>());
+builder.Services.AddScoped<DbFactory>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+builder.Services.AddControllers();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IViroCureUserService, ViroCureUserService>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

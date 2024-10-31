@@ -10,20 +10,19 @@ namespace PE_PRN231_FA24_TrialTest_2_BE.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly ViroCureFal2024dbContext _context;
+        private readonly IViroCureUserService _viroCureUserService;
         private readonly ITokenService _tokenService;
 
-        public AuthController(ViroCureFal2024dbContext context, ITokenService tokenService)
+        public AuthController(IViroCureUserService viroCureUserService, ITokenService tokenService)
         {
-            _context = context;
+            _viroCureUserService = viroCureUserService;
             _tokenService = tokenService;
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
-            var user = await _context.ViroCureUsers
-                .FirstOrDefaultAsync(u => u.Email == request.email && u.Password == request.password);
+            var user = await _viroCureUserService.Login(request.email, request.password);
 
             if (user == null)
             {
