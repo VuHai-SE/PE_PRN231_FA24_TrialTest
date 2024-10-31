@@ -1,39 +1,102 @@
 ﻿using Domain.Entities;
 using Domain.Interfaces;
+using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Data;
 
 namespace Infrastructure
 {
     public class UnitOfWork : IUnitOfWork
     {
-        private readonly ViroCureFal2024dbContext _context;
-        private IGenericRepository<Person> _personRepository;
-        private IGenericRepository<ViroCureUser> _viroCureUserRepository;
-        private IGenericRepository<Virus> _virusRepository;
-        private IGenericRepository<PersonVirus> _personVirusRepository;
+        public DbContext DbContext { get; private set; }
+        private Dictionary<string, object> Repositories { get; }
+        private IDbContextTransaction _transaction;
+        private IsolationLevel? _isolationLevel;
 
-        public UnitOfWork(ViroCureFal2024dbContext context)
+        public UnitOfWork(DbFactory dbFactory)
         {
-            _context = context;
+            DbContext = dbFactory.DbContext;
+            Repositories = new Dictionary<string, dynamic>();
         }
 
-        public IGenericRepository<Person> PersonRepository => _personRepository ??= new GenericRepository<Person>(_context);
-        public IGenericRepository<ViroCureUser> ViroCureUserRepository => _viroCureUserRepository ??= new GenericRepository<ViroCureUser>(_context);
-        public IGenericRepository<Virus> VirusRepository => _virusRepository ??= new GenericRepository<Virus>(_context);
-        public IGenericRepository<PersonVirus> PersonVirusRepository => _personVirusRepository ??= new GenericRepository<PersonVirus>(_context);
-
-        public async Task SaveAsync()
+        public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            await _context.SaveChangesAsync();
+            return await DbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        private async Task StartNewTransactionIfNeeded()
+        {
+            if (_transaction == null)
+            {
+                _transaction = _isolationLevel.HasValue ?
+                    await DbContext.Database.BeginTransactionAsync(_isolationLevel.GetValueOrDefault()) : await DbContext.Database.BeginTransactionAsync();
+            }
+        }
+
+        public async Task BeginTransaction()
+        {
+            await StartNewTransactionIfNeeded();
+        }
+
+        public async Task CommitTransaction()
+        {
+            /*
+         	do not open transaction here, because if during the request
+         	nothing was changed(only select queries were run), we don't
+         	want to open and commit an empty transaction -calling SaveChanges()
+         	on _transactionProvider will not send any sql to database in such case
+        	*/
+            await DbContext.SaveChangesAsync();
+
+            if (_transaction == null) return;
+            await _transaction.CommitAsync();
+
+            await _transaction.DisposeAsync();
+            _transaction = null;
+        }
+
+        public async Task RollbackTransaction()
+        {
+            if (_transaction == null) return;
+
+            await _transaction.RollbackAsync();
+
+            await _transaction.DisposeAsync();
+            _transaction = null;
         }
 
         public void Dispose()
         {
-            _context.Dispose();
+            if (DbContext == null)
+                return;
+
+            // Dispose DbContext mà không cần kiểm tra trạng thái kết nối
+            DbContext.Dispose();
+            DbContext = null;
+        }
+
+        public IRepository<TEntity> Repository<TEntity>() where TEntity : class
+        {
+            var type = typeof(TEntity);
+            var typeName = type.Name;
+
+            lock (Repositories)
+            {
+                if (Repositories.ContainsKey(typeName))
+                {
+                    return (IRepository<TEntity>)Repositories[typeName];
+                }
+
+                var repository = new Repository<TEntity>(DbContext);
+
+                Repositories.Add(typeName, repository);
+                return repository;
+            }
         }
     }
 }

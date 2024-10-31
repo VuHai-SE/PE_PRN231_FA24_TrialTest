@@ -1,4 +1,5 @@
 ﻿using Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,11 +10,16 @@ namespace Domain.Interfaces
 {
     public interface IUnitOfWork : IDisposable
     {
-        IGenericRepository<Person> PersonRepository { get; }
-        IGenericRepository<ViroCureUser> ViroCureUserRepository { get; }
-        IGenericRepository<Virus> VirusRepository { get; }
-        IGenericRepository<PersonVirus> PersonVirusRepository { get; }
+        DbContext DbContext { get; }
 
-        Task SaveAsync();
+        /// <summary>
+        /// Get repository instance of an entity inside UnitOfWork scope
+        /// </summary>
+        IRepository<T> Repository<T>() where T : class;
+
+        Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+        Task BeginTransaction();
+        Task CommitTransaction();
+        Task RollbackTransaction();
     }
 }
