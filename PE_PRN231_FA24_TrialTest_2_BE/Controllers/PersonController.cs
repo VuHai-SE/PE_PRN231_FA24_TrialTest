@@ -1,34 +1,31 @@
 ﻿using Domain.Entities;
+using Domain.Interfaces.Services;
+using Dto;
 using Dto.Requests;
 using Dto.Responses;
 using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Service;
 
 namespace PE_PRN231_FA24_TrialTest_2_BE.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/person")]
     [ApiController]
     public class PersonController : ControllerBase
     {
-        private readonly ViroCureFal2024dbContext _context;
+        private readonly IPersonService _personService;
+        private readonly IVirusService _virusService;
 
-        public PersonController(ViroCureFal2024dbContext context)
+        public PersonController(IPersonService personService, IVirusService virusService)
         {
-            _context = context;
+            _personService = personService;
+            _virusService = virusService;
         }
 
         [HttpPost]
         public async Task<IActionResult> AddPersonWithViruses([FromBody] AddPersonRequest request)
         {
-            // Kiểm tra xem người đã tồn tại chưa
-            var existingPerson = await _context.People.FindAsync(request.PersonId);
-            if (existingPerson != null)
-            {
-                return Conflict(new { message = "Person with the same ID already exists." });
-            }
-
-            // Tạo một đối tượng Person
             var person = new Person
             {
                 PersonId = request.PersonId,
@@ -37,56 +34,32 @@ namespace PE_PRN231_FA24_TrialTest_2_BE.Controllers
                 Phone = request.Phone
             };
 
-            // Thêm Person vào context
-            _context.People.Add(person);
-
-            // Thêm các virus vào context
+            // Fetch or create virus IDs using VirusService
+            var personViruses = new List<PersonVirus>();
             foreach (var virusInfo in request.Viruses)
             {
-                // Tìm virus trong hệ thống hoặc thêm mới nếu chưa tồn tại
-                var virus = await _context.Viruses.FirstOrDefaultAsync(v => v.VirusName == virusInfo.VirusName);
-                if (virus == null)
-                {
-                    virus = new Virus
-                    {
-                        VirusName = virusInfo.VirusName,
-                        Treatment = null // Giá trị Treatment có thể để trống nếu chưa có
-                    };
-                    _context.Viruses.Add(virus);
-                    await _context.SaveChangesAsync(); // Lưu thay đổi để có `virus_id`
-                }
-
-                // Tạo đối tượng PersonVirus
-                var personVirus = new PersonVirus
+                var virusId = await _virusService.GetOrCreateVirusIdByNameAsync(virusInfo.VirusName);
+                personViruses.Add(new PersonVirus
                 {
                     PersonId = person.PersonId,
-                    VirusId = virus.VirusId,
+                    VirusId = virusId,
                     ResistanceRate = virusInfo.ResistanceRate
-                };
-
-                _context.PersonViruses.Add(personVirus);
+                });
             }
 
-            // Lưu tất cả thay đổi vào database
-            await _context.SaveChangesAsync();
+            await _personService.AddPersonWithVirusesAsync(person, personViruses);
 
-            // Tạo phản hồi
-            var response = new AddPersonResponse
+            return CreatedAtAction(nameof(GetPersonDetails), new { id = person.PersonId }, new AddPersonResponse
             {
                 PersonId = person.PersonId,
                 Message = "Person and viruses added successfully"
-            };
-
-            return CreatedAtAction(nameof(AddPersonWithViruses), new { id = person.PersonId }, response);
+            });
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetPersonDetails(int id)
         {
-            var person = await _context.People
-                .Include(p => p.PersonViruses)
-                .ThenInclude(pv => pv.Virus)
-                .FirstOrDefaultAsync(p => p.PersonId == id);
+            var person = await _personService.GetPersonDetailsAsync(id);
 
             if (person == null)
             {
@@ -97,9 +70,9 @@ namespace PE_PRN231_FA24_TrialTest_2_BE.Controllers
             {
                 PersonId = person.PersonId,
                 FullName = person.Fullname,
-                BirthDay = person.BirthDay.ToDateTime(new TimeOnly(0, 0)), // Chuyển đổi DateOnly sang DateTime
+                BirthDay = person.BirthDay.ToDateTime(new TimeOnly(0, 0)),
                 Phone = person.Phone,
-                Viruses = person.PersonViruses.Select(pv => new Dto.Responses.VirusInfo
+                Viruses = person.PersonViruses.Select(pv => new VirusInfo
                 {
                     VirusName = pv.Virus.VirusName,
                     ResistanceRate = (float)pv.ResistanceRate
@@ -112,18 +85,14 @@ namespace PE_PRN231_FA24_TrialTest_2_BE.Controllers
         [HttpGet("persons")]
         public async Task<IActionResult> GetAllPersons()
         {
-            var persons = await _context.People
-                .Include(p => p.PersonViruses)
-                .ThenInclude(pv => pv.Virus)
-                .ToListAsync();
-
+            var persons = await _personService.GetAllPersonsAsync();
             var response = persons.Select(person => new GetPersonResponse
             {
                 PersonId = person.PersonId,
                 FullName = person.Fullname,
-                BirthDay = person.BirthDay.ToDateTime(new TimeOnly(0, 0)), // Chuyển đổi DateOnly sang DateTime
+                BirthDay = person.BirthDay.ToDateTime(new TimeOnly(0, 0)),
                 Phone = person.Phone,
-                Viruses = person.PersonViruses.Select(pv => new Dto.Responses.VirusInfo
+                Viruses = person.PersonViruses.Select(pv => new VirusInfo
                 {
                     VirusName = pv.Virus.VirusName,
                     ResistanceRate = (float)pv.ResistanceRate
@@ -136,52 +105,28 @@ namespace PE_PRN231_FA24_TrialTest_2_BE.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdatePerson(int id, [FromBody] UpdatePersonRequest request)
         {
-            var person = await _context.People
-                .Include(p => p.PersonViruses)
-                .ThenInclude(pv => pv.Virus)
-                .FirstOrDefaultAsync(p => p.PersonId == id);
-
-            if (person == null)
+            var person = new Person
             {
-                return NotFound(new { message = "Person not found" });
-            }
+                PersonId = id,
+                Fullname = request.FullName,
+                BirthDay = DateOnly.FromDateTime(request.BirthDay),
+                Phone = request.Phone
+            };
 
-            // Cập nhật thông tin của Person
-            person.Fullname = request.FullName;
-            person.BirthDay = DateOnly.FromDateTime(request.BirthDay);
-            person.Phone = request.Phone;
-
-            // Xóa các virus hiện tại của người dùng
-            _context.PersonViruses.RemoveRange(person.PersonViruses);
-
-            // Thêm các virus mới hoặc cập nhật nếu có
+            // Fetch or create virus IDs using VirusService
+            var personViruses = new List<PersonVirus>();
             foreach (var virusInfo in request.Viruses)
             {
-                var virus = await _context.Viruses.FirstOrDefaultAsync(v => v.VirusName == virusInfo.VirusName);
-                if (virus == null)
-                {
-                    virus = new Virus
-                    {
-                        VirusName = virusInfo.VirusName,
-                        Treatment = null // Có thể để trống nếu không có thông tin Treatment
-                    };
-                    _context.Viruses.Add(virus);
-                    await _context.SaveChangesAsync(); // Lưu lại để có VirusId
-                }
-
-                // Tạo đối tượng PersonVirus mới với virus và tỷ lệ kháng thuốc
-                var personVirus = new PersonVirus
+                var virusId = await _virusService.GetOrCreateVirusIdByNameAsync(virusInfo.VirusName);
+                personViruses.Add(new PersonVirus
                 {
                     PersonId = person.PersonId,
-                    VirusId = virus.VirusId,
+                    VirusId = virusId,
                     ResistanceRate = virusInfo.ResistanceRate
-                };
-
-                _context.PersonViruses.Add(personVirus);
+                });
             }
 
-            // Lưu thay đổi vào database
-            await _context.SaveChangesAsync();
+            await _personService.UpdatePersonAsync(person, personViruses);
 
             return Ok(new { message = "Person and viruses updated successfully" });
         }
@@ -189,24 +134,7 @@ namespace PE_PRN231_FA24_TrialTest_2_BE.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeletePerson(int id)
         {
-            var person = await _context.People
-                .Include(p => p.PersonViruses)
-                .FirstOrDefaultAsync(p => p.PersonId == id);
-
-            if (person == null)
-            {
-                return NotFound(new { message = "Person not found" });
-            }
-
-            // Xóa các virus liên quan của người dùng
-            _context.PersonViruses.RemoveRange(person.PersonViruses);
-
-            // Xóa chính đối tượng Person
-            _context.People.Remove(person);
-
-            // Lưu thay đổi vào database
-            await _context.SaveChangesAsync();
-
+            await _personService.DeletePersonAsync(id);
             return Ok(new { message = "Person and related viruses deleted successfully" });
         }
     }

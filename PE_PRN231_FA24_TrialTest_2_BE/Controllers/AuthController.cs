@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace PE_PRN231_FA24_TrialTest_2_BE.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/auth")]
     [ApiController]
     public class AuthController : ControllerBase
     {

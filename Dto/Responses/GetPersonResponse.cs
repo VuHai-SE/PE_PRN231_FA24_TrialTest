@@ -14,10 +14,4 @@ namespace Dto.Responses
         public string Phone { get; set; }
         public List<VirusInfo> Viruses { get; set; }
     }
-
-    public class VirusInfo
-    {
-        public string VirusName { get; set; }
-        public float ResistanceRate { get; set; }
-    }
 }
