@@ -7,6 +7,7 @@ using Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Service;
+using System.Text.RegularExpressions;
 
 namespace PE_PRN231_FA24_TrialTest_2_BE.Controllers
 {
@@ -26,6 +27,33 @@ namespace PE_PRN231_FA24_TrialTest_2_BE.Controllers
         [HttpPost]
         public async Task<IActionResult> AddPersonWithViruses([FromBody] AddPersonRequest request)
         {
+            // Validate Fullname format
+            if (!IsValidFullname(request.FullName))
+            {
+                return BadRequest(new { error = "Each word of the Fullname must begin with the capital letter and can contain a-z, A-Z, space, @, #, and digits 0-9." });
+            }
+
+            // Validate Birthday
+            if (request.BirthDay >= new DateTime(2007, 1, 1))
+            {
+                return BadRequest(new { error = "Value for Birthday must be earlier than 01-01-2007." });
+            }
+
+            // Validate Phone Number format
+            if (!IsValidPhoneNumber(request.Phone))
+            {
+                return BadRequest(new { error = "Phone number must be in the format +84989xxxxxx." });
+            }
+
+            // Validate Resistance Rate for each virus
+            foreach (var virusInfo in request.Viruses)
+            {
+                if (virusInfo.ResistanceRate < 0 || virusInfo.ResistanceRate > 1)
+                {
+                    return BadRequest(new { error = "Resistance Rate must be between 0 and 1." });
+                }
+            }
+
             var person = new Person
             {
                 PersonId = request.PersonId,
@@ -105,6 +133,31 @@ namespace PE_PRN231_FA24_TrialTest_2_BE.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdatePerson(int id, [FromBody] UpdatePersonRequest request)
         {
+            // The same validation logic can be reused here as in the AddPersonWithViruses method.
+
+            if (!IsValidFullname(request.FullName))
+            {
+                return BadRequest(new { error = "Each word of the Fullname must begin with the capital letter and can contain a-z, A-Z, space, @, #, and digits 0-9." });
+            }
+
+            if (request.BirthDay >= new DateTime(2007, 1, 1))
+            {
+                return BadRequest(new { error = "Value for Birthday must be earlier than 01-01-2007." });
+            }
+
+            if (!IsValidPhoneNumber(request.Phone))
+            {
+                return BadRequest(new { error = "Phone number must be in the format +84xxxxxxxxx." });
+            }
+
+            foreach (var virusInfo in request.Viruses)
+            {
+                if (virusInfo.ResistanceRate < 0 || virusInfo.ResistanceRate > 1)
+                {
+                    return BadRequest(new { error = "Resistance Rate must be between 0 and 1." });
+                }
+            }
+
             var person = new Person
             {
                 PersonId = id,
@@ -113,7 +166,6 @@ namespace PE_PRN231_FA24_TrialTest_2_BE.Controllers
                 Phone = request.Phone
             };
 
-            // Fetch or create virus IDs using VirusService
             var personViruses = new List<PersonVirus>();
             foreach (var virusInfo in request.Viruses)
             {
@@ -136,6 +188,21 @@ namespace PE_PRN231_FA24_TrialTest_2_BE.Controllers
         {
             await _personService.DeletePersonAsync(id);
             return Ok(new { message = "Person and related viruses deleted successfully" });
+        }
+
+        // Validation methods
+        private bool IsValidFullname(string fullName)
+        {
+            // Regex pattern to validate full name with each word starting with a capital letter and allowing only specified characters
+            var fullNamePattern = @"^([A-Z][a-z0-9@#]*\s)*[A-Z][a-z0-9@#]*$";
+            return Regex.IsMatch(fullName, fullNamePattern);
+        }
+
+        private bool IsValidPhoneNumber(string phoneNumber)
+        {
+            // Pattern to match phone numbers in international format like +84989xxxxxx
+            var phonePattern = @"^\+84\d{9}$";
+            return Regex.IsMatch(phoneNumber, phonePattern);
         }
     }
 }
