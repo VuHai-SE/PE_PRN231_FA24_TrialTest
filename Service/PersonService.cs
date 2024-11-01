@@ -63,12 +63,20 @@ namespace Service
             var personRepository = _unitOfWork.Repository<Person>();
             var personVirusRepository = _unitOfWork.Repository<PersonVirus>();
 
-            var person = await personRepository.FindAsync(id);
+            var person = await personRepository.GetAll()
+                .Include(p => p.PersonViruses)
+                .FirstOrDefaultAsync(p => p.PersonId == id);
+
             if (person != null)
             {
                 await _unitOfWork.BeginTransaction();
-                await personVirusRepository.DeleteRangeAsync(person.PersonViruses, false);
-                await personRepository.DeleteAsync(person, false);
+
+                // Xóa các bản ghi liên quan trong bảng PersonVirus trước
+                await personVirusRepository.DeleteRangeAsync(person.PersonViruses, saveChanges: false);
+
+                // Sau đó xóa Person
+                await personRepository.DeleteAsync(person, saveChanges: false);
+
                 await _unitOfWork.CommitTransaction();
             }
         }
