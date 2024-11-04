@@ -15,6 +15,6 @@ namespace Domain.Interfaces.Services
         Task AddPersonWithVirusesAsync(Person person, List<PersonVirus> personViruses);
         Task UpdatePersonAsync(Person person, List<PersonVirus> personViruses);
         Task DeletePersonAsync(int id);
-        //Task<List<PersonVirus>> PreparePersonVirusesAsync(int personId, List<string> virusNames, List<float> resistanceRates);
+        Task<IEnumerable<Person>> SearchPersonsByKeywordAsync(string? keyword);
     }
 }

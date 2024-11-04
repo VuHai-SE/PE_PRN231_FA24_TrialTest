@@ -17,12 +17,15 @@ namespace Infrastructure
         private Dictionary<string, object> Repositories { get; }
         private IDbContextTransaction _transaction;
         private IsolationLevel? _isolationLevel;
+        private IPersonRepository _personRepository;
 
         public UnitOfWork(DbFactory dbFactory)
         {
             DbContext = dbFactory.DbContext;
             Repositories = new Dictionary<string, dynamic>();
         }
+
+        public IPersonRepository PersonRepository => _personRepository ??= new PersonRepository(DbContext);
 
         public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {

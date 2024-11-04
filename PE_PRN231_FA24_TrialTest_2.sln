@@ -3,17 +3,17 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34902.65
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PE_PRN231_FA24_TrialTest_2_BE", "PE_PRN231_FA24_TrialTest_2_BE\PE_PRN231_FA24_TrialTest_2_BE.csproj", "{5C08286F-A680-43B6-84B1-9E39D8F881B5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PE_PRN231_FA24_TrialTest_2_BE", "PE_PRN231_FA24_TrialTest_2_BE\PE_PRN231_FA24_TrialTest_2_BE.csproj", "{5C08286F-A680-43B6-84B1-9E39D8F881B5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PE_PRN231_FA24_TrialTest_2_FE", "PE_PRN231_FA24_TrialTest_2_FE\PE_PRN231_FA24_TrialTest_2_FE.csproj", "{5AED1F03-BFC3-4ACB-A9FC-E258967A06F5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PE_PRN231_FA24_TrialTest_2_FE", "PE_PRN231_FA24_TrialTest_2_FE\PE_PRN231_FA24_TrialTest_2_FE.csproj", "{5AED1F03-BFC3-4ACB-A9FC-E258967A06F5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Domain", "Domain\Domain.csproj", "{8D01190D-7446-40B1-AB98-2B40ED471B49}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Domain", "Domain\Domain.csproj", "{8D01190D-7446-40B1-AB98-2B40ED471B49}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infrastructure", "Infrastructure\Infrastructure.csproj", "{693E700D-DE29-4ABB-AACA-D9D3C2EBCFF1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Infrastructure", "Infrastructure\Infrastructure.csproj", "{693E700D-DE29-4ABB-AACA-D9D3C2EBCFF1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Service", "Service\Service.csproj", "{B4169998-71D6-4D0B-8086-6A3FCEF651C1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Service", "Service\Service.csproj", "{B4169998-71D6-4D0B-8086-6A3FCEF651C1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dto", "Dto\Dto.csproj", "{2E6370F3-EEC2-4D90-A6A0-1E20B9BCAC77}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Dto", "Dto\Dto.csproj", "{2E6370F3-EEC2-4D90-A6A0-1E20B9BCAC77}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

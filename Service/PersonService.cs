@@ -80,5 +80,10 @@ namespace Service
                 await _unitOfWork.CommitTransaction();
             }
         }
+
+        public async Task<IEnumerable<Person>> SearchPersonsByKeywordAsync(string? keyword)
+        {
+            return await _unitOfWork.PersonRepository.SearchByKeywordAsync(keyword);
+        }
     }
 }

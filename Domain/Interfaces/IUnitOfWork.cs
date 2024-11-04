@@ -11,6 +11,7 @@ namespace Domain.Interfaces
     public interface IUnitOfWork : IDisposable
     {
         DbContext DbContext { get; }
+        IPersonRepository PersonRepository { get; }
 
         /// <summary>
         /// Get repository instance of an entity inside UnitOfWork scope

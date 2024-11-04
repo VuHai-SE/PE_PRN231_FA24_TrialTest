@@ -4,6 +4,7 @@ using Dto;
 using Dto.Requests;
 using Dto.Responses;
 using Infrastructure;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Service;
@@ -24,6 +25,7 @@ namespace PE_PRN231_FA24_TrialTest_2_BE.Controllers
             _virusService = virusService;
         }
 
+        [Authorize(Roles = "3")]
         [HttpPost]
         public async Task<IActionResult> AddPersonWithViruses([FromBody] AddPersonRequest request)
         {
@@ -84,6 +86,7 @@ namespace PE_PRN231_FA24_TrialTest_2_BE.Controllers
             });
         }
 
+        [Authorize(Roles = "2, 3")]
         [HttpGet("{id}")]
         public async Task<IActionResult> GetPersonDetails(int id)
         {
@@ -110,6 +113,7 @@ namespace PE_PRN231_FA24_TrialTest_2_BE.Controllers
             return Ok(response);
         }
 
+        [Authorize(Roles = "3")]
         [HttpGet("persons")]
         public async Task<IActionResult> GetAllPersons()
         {
@@ -130,6 +134,7 @@ namespace PE_PRN231_FA24_TrialTest_2_BE.Controllers
             return Ok(response);
         }
 
+        [Authorize(Roles = "3")]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdatePerson(int id, [FromBody] UpdatePersonRequest request)
         {
@@ -183,11 +188,34 @@ namespace PE_PRN231_FA24_TrialTest_2_BE.Controllers
             return Ok(new { message = "Person and viruses updated successfully" });
         }
 
+        [Authorize(Roles = "3")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeletePerson(int id)
         {
             await _personService.DeletePersonAsync(id);
             return Ok(new { message = "Person and related viruses deleted successfully" });
+        }
+
+        [Authorize(Roles = "1, 3")]
+        [HttpGet("search")]
+        public async Task<IActionResult> SearchPersons([FromQuery] string? keyword)
+        {
+            var persons = await _personService.SearchPersonsByKeywordAsync(keyword);
+
+            var response = persons.Select(person => new GetPersonResponse
+            {
+                PersonId = person.PersonId,
+                FullName = person.Fullname,
+                BirthDay = person.BirthDay.ToDateTime(new TimeOnly(0, 0)),
+                Phone = person.Phone,
+                Viruses = person.PersonViruses.Select(pv => new VirusInfo
+                {
+                    VirusName = pv.Virus.VirusName,
+                    ResistanceRate = (float)pv.ResistanceRate
+                }).ToList()
+            }).ToList();
+
+            return Ok(response);
         }
 
         // Validation methods

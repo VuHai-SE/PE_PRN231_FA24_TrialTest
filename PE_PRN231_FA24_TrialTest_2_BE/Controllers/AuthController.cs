@@ -38,7 +38,7 @@ namespace PE_PRN231_FA24_TrialTest_2_BE.Controllers
                 {
                     id = user.UserId,
                     email = user.Email,
-                    role = user.Role == 1 ? "admin" : user.Role == 2 ? "benh nhan" : "bac si" // Mapping role to descriptive string
+                    role = user.Role == 1 ? "admin" : user.Role == 2 ? "patient" : "doctor" // Mapping role to descriptive string
                 }
             });
         }
