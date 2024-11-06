@@ -1,0 +1,14 @@
+﻿@page
+@model PE_PRN231_FA24_TrialTest_2_FE.Pages.Account.LoginModel
+<h2>Login</h2>
+<form method="post">
+    <label>Email:</label>
+    <input type="email" asp-for="Email" required />
+    <label>Password:</label>
+    <input type="password" asp-for="Password" required />
+    <button type="submit">Login</button>
+</form>
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="error">@Model.ErrorMessage</div>
+}

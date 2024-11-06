@@ -1,0 +1,75 @@
+﻿@page
+@model PE_PRN231_FA24_TrialTest_2_FE.Pages.Doctor.IndexModel
+@{
+    ViewData["Title"] = "Manage Patients";
+}
+<h2>Manage Patients</h2>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+<!-- Add Patient Form -->
+<h3>Add New Patient</h3>
+<form method="post" asp-page-handler="Add">
+    <div class="form-group">
+        <label for="FullName">Full Name:</label>
+        <input type="text" class="form-control" id="FullName" asp-for="AddPatient.FullName" required />
+    </div>
+    <div class="form-group">
+        <label for="BirthDay">Birthday:</label>
+        <input type="date" class="form-control" id="BirthDay" asp-for="AddPatient.BirthDay" required />
+    </div>
+    <div class="form-group">
+        <label for="Phone">Phone:</label>
+        <input type="text" class="form-control" id="Phone" asp-for="AddPatient.Phone" required />
+    </div>
+    <div class="form-group">
+        <label for="VirusName">Virus:</label>
+        <input type="text" class="form-control" asp-for="AddPatient.Viruses[0].VirusName" required />
+    </div>
+    <div class="form-group">
+        <label for="ResistanceRate">Resistance Rate:</label>
+        <input type="number" class="form-control" asp-for="AddPatient.Viruses[0].ResistanceRate" min="0" max="1" step="0.01" required />
+    </div>
+    <button type="submit" class="btn btn-primary">Add Patient</button>
+</form>
+
+<hr />
+
+<!-- Patient List -->
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Fullname</th>
+            <th>Birthday</th>
+            <th>Phone</th>
+            <th>Viruses</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var patient in Model.Patients)
+        {
+            <tr>
+                <td>@patient.FullName</td>
+                <td>@patient.BirthDay.ToShortDateString()</td>
+                <td>@patient.Phone</td>
+                <td>
+                    @foreach (var virus in patient.Viruses)
+                    {
+                        <span>@virus.VirusName (@virus.ResistanceRate)</span>
+                        <br />
+                    }
+                </td>
+                <td>
+                    <form method="post" asp-page-handler="Delete" asp-route-id="@patient.PersonId" onsubmit="return confirm('Are you sure you want to delete this patient?');">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                    </form>
+                    <a asp-page-handler="Edit" asp-route-id="@patient.PersonId" class="btn btn-primary">Edit</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

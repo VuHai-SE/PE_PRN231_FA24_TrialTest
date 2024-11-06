@@ -1,0 +1,26 @@
+﻿@page "{id:int}"
+@model PE_PRN231_FA24_TrialTest_2_FE.Pages.Patient.IndexModel
+<h2>My Information</h2>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger">@Model.ErrorMessage</div>
+}
+
+@if (Model.Patient != null)
+{
+    <p><strong>Full Name:</strong> @Model.Patient.FullName</p>
+    <p><strong>Birthday:</strong> @Model.Patient.BirthDay.ToShortDateString()</p>
+    <p><strong>Phone:</strong> @Model.Patient.Phone</p>
+    <p><strong>Viruses:</strong></p>
+    <ul>
+        @foreach (var virus in Model.Patient.Viruses)
+        {
+            <li>@virus.VirusName (@virus.ResistanceRate)</li>
+        }
+    </ul>
+}
+else if (string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <p>No patient information found.</p>
+}
